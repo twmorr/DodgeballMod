@@ -32,5 +32,13 @@ namespace DodgeballMod.Content.Items
 
             Item.UseSound = SoundID.Item1;
         }
+
+        public override void AddRecipes()
+        {
+            /*Recipe recipe = CreateRecipe();
+            recipe.AddIngredient(ItemID.DirtBlock, 10);
+            recipe.AddTile(TileID.WorkBenches);
+            recipe.Register();*/
+        }
     }
 }
