@@ -18,7 +18,7 @@ namespace DodgeballMod.Content.Items
 
             Item.damage = 20;
             Item.DamageType = DamageClass.Ranged;
-            Item.knockBack = 3f;
+            Item.knockBack = 5f;
 
             Item.useTime = 25;
             Item.useAnimation = 25;
@@ -28,7 +28,7 @@ namespace DodgeballMod.Content.Items
             Item.noUseGraphic = true;
 
             Item.shoot = ModContent.ProjectileType<DodgeballProjectile>();
-            Item.shootSpeed = 12f;
+            Item.shootSpeed = 30f;
 
             Item.UseSound = SoundID.Item1;
         }

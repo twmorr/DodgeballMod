@@ -8,7 +8,8 @@ namespace DodgeballMod.Content.Projectiles
 {
     public class DodgeballProjectile : ModProjectile
     {
-        public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.BeachBall}";
+        public override string Texture => $"Terraria/Images/Item_5543";
+        //public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.BeachBall}";
 
         public override void SetDefaults()
         {
@@ -117,6 +118,15 @@ namespace DodgeballMod.Content.Projectiles
             Projectile.ai[0] = 1f;
 
             Projectile.tileCollide = false; // Disable tile collision so it can fly back to the player without getting stuck in walls.
+
+            Player owner = Main.player[Projectile.owner];
+
+            Vector2 directionToPlayer = owner.Center - Projectile.Center;
+            directionToPlayer.Normalize();
+
+            // Give the ball an immediate, strong bounce away from the enemy.
+            Projectile.velocity = directionToPlayer * 30f;
+
 
             Projectile.netUpdate = true; // Sync the projectile's state with other clients in multiplayer.
         }
