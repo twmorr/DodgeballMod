@@ -21,6 +21,7 @@ namespace DodgeballMod.Content.Projectiles
             Projectile.DamageType = DamageClass.Ranged;
 
             Projectile.timeLeft = 300;
+            Projectile.penetrate = -1; // Infinite penetration, so it can hit multiple enemies and doesnt despawn after hitting one.
 
             Projectile.tileCollide = true;
             Projectile.ignoreWater = false;
@@ -28,6 +29,36 @@ namespace DodgeballMod.Content.Projectiles
 
         public override void AI()
         {
+            // ai[0] stores which behavior the dodgeball is currently using.
+            // 0 = homing toward enemies
+            // 1 = returning to the player
+            bool isReturning = Projectile.ai[0] == 1f;
+
+            if (isReturning)
+            {
+                Player owner = Main.player[Projectile.owner];
+
+                // Get a vector pointing from the ball back to the player.
+                Vector2 directionToPlayer = owner.Center - Projectile.Center;
+
+                // Once the ball gets close enough, remove it.
+                if (directionToPlayer.Length() < 20f)
+                {
+                    // If the ball is close enough to the player, just despawn it.
+                    Projectile.Kill();
+                    return;
+                }
+
+                directionToPlayer.Normalize();
+
+                Vector2 returnVelocity = directionToPlayer * 12f;
+
+                // Use the same smooth steering we used for enemy homing.
+                Projectile.velocity = Vector2.Lerp(Projectile.velocity, returnVelocity, 0.08f);
+
+                return;
+            }
+
             NPC target = FindClosestEnemy(500f);
 
             // No enemy nearby. Just continue moving normally.
@@ -78,6 +109,31 @@ namespace DodgeballMod.Content.Projectiles
 
             // Returns the closest valid enemy, or null if none were in range.
             return closestEnemy;
+        }
+
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
+        {
+            // When the dodgeball hits an enemy, switch to returning to the player.
+            Projectile.ai[0] = 1f;
+
+            Projectile.tileCollide = false; // Disable tile collision so it can fly back to the player without getting stuck in walls.
+
+            Projectile.netUpdate = true; // Sync the projectile's state with other clients in multiplayer.
+        }
+
+        public override bool? CanHitNPC(NPC target)
+        {
+            if (Projectile.ai[0] == 1f)
+            {
+                // If the dodgeball is returning to the player, it shouldn't hit enemies.
+                return false;
+            }
+
+            // Only hit NPCs that are valid enemy targets.
+            if (!target.CanBeChasedBy())
+                return false;
+
+            return true;
         }
     }
 }
