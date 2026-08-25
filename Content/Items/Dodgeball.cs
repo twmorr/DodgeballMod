@@ -1,37 +1,44 @@
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
+using DodgeballMod.Content.Projectiles;
 
 namespace DodgeballMod.Content.Items
 {
-	// This is a basic item template.
-	// Please see tModLoader's ExampleMod for every other example:
-	// https://github.com/tModLoader/tModLoader/tree/stable/ExampleMod
-	public class Dodgeball : ModItem
-	{
-		// The Display Name and Tooltip of this item can be edited in the 'Localization/en-US_Mods.DodgeballMod.hjson' file.
-		public override void SetDefaults()
-		{
-			Item.damage = 50;
-			Item.DamageType = DamageClass.Melee;
-			Item.width = 40;
-			Item.height = 40;
-			Item.useTime = 20;
-			Item.useAnimation = 20;
-			Item.useStyle = ItemUseStyleID.Swing;
-			Item.knockBack = 6;
-			Item.value = Item.buyPrice(silver: 1);
-			Item.rare = ItemRarityID.Blue;
-			Item.UseSound = SoundID.Item1;
-			Item.autoReuse = true;
-		}
+    public class Dodgeball : ModItem
+    {
+        // Temporary texture so we don't need to make our own sprite yet.
+        public override string Texture =>
+            $"Terraria/Images/Item_{ItemID.BeachBall}";
 
-		public override void AddRecipes()
-		{
-			Recipe recipe = CreateRecipe();
-			recipe.AddIngredient(ItemID.DirtBlock, 10);
-			recipe.AddTile(TileID.WorkBenches);
-			recipe.Register();
-		}
-	}
+        public override void SetDefaults()
+        {
+            Item.width = 30;
+            Item.height = 30;
+
+            Item.damage = 20;
+            Item.DamageType = DamageClass.Ranged;
+            Item.knockBack = 3f;
+
+            Item.useTime = 25;
+            Item.useAnimation = 25;
+            Item.useStyle = ItemUseStyleID.Swing;
+
+            Item.noMelee = true;
+            Item.noUseGraphic = true;
+
+            Item.shoot = ModContent.ProjectileType<DodgeballProjectile>();
+            Item.shootSpeed = 12f;
+
+            Item.UseSound = SoundID.Item1;
+        }
+
+        public override void AddRecipes()
+        {
+            /*Recipe recipe = CreateRecipe();
+            recipe.AddIngredient(ItemID.DirtBlock, 10);
+            recipe.AddTile(TileID.WorkBenches);
+            recipe.Register();*/
+        }
+    }
 }

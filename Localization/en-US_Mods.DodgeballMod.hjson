@@ -3,7 +3,7 @@
 
 Items: {
 	Dodgeball: {
-		DisplayName: "Dodgeball"
+		DisplayName: Dodgeball
 		Tooltip:
 			'''
 			Template of an item
@@ -12,3 +12,5 @@ Items: {
 			'''
 	}
 }
+
+Projectiles.DodgeballProjectile.DisplayName: Dodgeball Projectile
