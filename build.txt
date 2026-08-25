@@ -1,0 +1,3 @@
+displayName = Dodgeball Mod
+author = Naughtybitss
+version = 0.1
