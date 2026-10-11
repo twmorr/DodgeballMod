@@ -8,6 +8,12 @@ namespace DodgeballMod.Content.Projectiles
 {
     public class DodgeballProjectile : ModProjectile
     {
+        // Top speed the ball steers toward, both when homing and when returning.
+        private const float HomingSpeed = 12f;
+
+        // How strongly the ball turns toward its goal each tick (0 = never, 1 = instantly).
+        private const float TurnStrength = 0.08f;
+
         public override string Texture => $"Terraria/Images/Item_5543";
         //public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.BeachBall}";
 
@@ -35,27 +41,35 @@ namespace DodgeballMod.Content.Projectiles
             // 1 = returning to the player
             bool isReturning = Projectile.ai[0] == 1f;
 
+            // Derive tile collision from ai[0] every tick so it stays in sync in multiplayer.
+            // Returning balls ignore tiles so they can fly back through walls.
+            Projectile.tileCollide = !isReturning;
+
             if (isReturning)
             {
                 Player owner = Main.player[Projectile.owner];
 
-                // Get a vector pointing from the ball back to the player.
-                Vector2 directionToPlayer = owner.Center - Projectile.Center;
-
-                // Once the ball gets close enough, remove it.
-                if (directionToPlayer.Length() < 20f)
+                // If the owner is gone or dead, there's nothing to return to.
+                if (!owner.active || owner.dead)
                 {
-                    // If the ball is close enough to the player, just despawn it.
                     Projectile.Kill();
                     return;
                 }
 
-                directionToPlayer.Normalize();
+                // Once the ball touches the player, remove it.
+                if (Projectile.Hitbox.Intersects(owner.Hitbox))
+                {
+                    Projectile.Kill();
+                    return;
+                }
 
-                Vector2 returnVelocity = directionToPlayer * 12f;
+                // Get a direction pointing from the ball back to the player.
+                Vector2 directionToPlayer = Projectile.DirectionTo(owner.Center);
+
+                Vector2 returnVelocity = directionToPlayer * HomingSpeed;
 
                 // Use the same smooth steering we used for enemy homing.
-                Projectile.velocity = Vector2.Lerp(Projectile.velocity, returnVelocity, 0.08f);
+                Projectile.velocity = Vector2.Lerp(Projectile.velocity, returnVelocity, TurnStrength);
 
                 return;
             }
@@ -66,17 +80,14 @@ namespace DodgeballMod.Content.Projectiles
             if (target == null)
                 return;
 
-            // Get a vector pointing from the ball to the enemy.
-            Vector2 directionToTarget = target.Center - Projectile.Center;
-
-            // Reduce that vector to direction only.
-            directionToTarget.Normalize();
+            // Get a direction pointing from the ball to the enemy.
+            Vector2 directionToTarget = Projectile.DirectionTo(target.Center);
 
             // This is the velocity we'd ideally like to have.
-            Vector2 desiredVelocity = directionToTarget * 12f;
+            Vector2 desiredVelocity = directionToTarget * HomingSpeed;
 
             // Gradually turn our current velocity toward it.
-            Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVelocity, 0.08f);
+            Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVelocity, TurnStrength);
         }
 
         private NPC FindClosestEnemy(float maxDistance)
@@ -117,16 +128,16 @@ namespace DodgeballMod.Content.Projectiles
             // When the dodgeball hits an enemy, switch to returning to the player.
             Projectile.ai[0] = 1f;
 
-            Projectile.tileCollide = false; // Disable tile collision so it can fly back to the player without getting stuck in walls.
+            // Reset the lifetime so the ball doesn't vanish partway through its return trip.
+            Projectile.timeLeft = 300;
 
             Player owner = Main.player[Projectile.owner];
 
-            Vector2 directionToPlayer = owner.Center - Projectile.Center;
-            directionToPlayer.Normalize();
+            // DirectionTo uses SafeNormalize, so this can't become NaN if the ball is on top of the player.
+            Vector2 directionToPlayer = Projectile.DirectionTo(owner.Center);
 
             // Give the ball an immediate, strong bounce away from the enemy.
             Projectile.velocity = directionToPlayer * 30f;
-
 
             Projectile.netUpdate = true; // Sync the projectile's state with other clients in multiplayer.
         }
@@ -139,11 +150,8 @@ namespace DodgeballMod.Content.Projectiles
                 return false;
             }
 
-            // Only hit NPCs that are valid enemy targets.
-            if (!target.CanBeChasedBy())
-                return false;
-
-            return true;
+            // Otherwise use vanilla's rules (this also lets the ball hit target dummies).
+            return null;
         }
     }
 }
